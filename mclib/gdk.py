@@ -50,3 +50,73 @@ def local_versions():
 def launch_local(version):
     d=validate(VERSIONS/version)
     return subprocess.Popen([str(d/"Minecraft.Windows.exe")],cwd=d)
+
+
+def _ps(script):
+    p=subprocess.run(["powershell","-NoProfile","-ExecutionPolicy","Bypass","-Command",script],
+                     capture_output=True,text=True,encoding="utf-8",errors="replace")
+    if p.returncode:
+        raise GdkError((p.stderr or p.stdout).strip() or "PowerShell failed")
+    return p.stdout.strip()
+
+def _family(channel):
+    return "Microsoft.MinecraftWindowsBeta_8wekyb3d8bbwe" if channel=="preview" else "Microsoft.MinecraftUWP_8wekyb3d8bbwe"
+
+def _staged_location(family):
+    script=f"""$p=Get-AppxPackage -AllUsers | Where-Object {{$_.PackageFamilyName -eq '{family}'}} | Select-Object -First 1 -ExpandProperty InstallLocation; if($p){{$p}}"""
+    out=_ps(script)
+    if not out: raise GdkError("Windows staged the package but its install location could not be found.")
+    return Path(out.splitlines()[-1].strip()).resolve()
+
+def _run_decrypt_in_package(family, src, dst):
+    helper=helper_path().resolve()
+    if not helper.exists(): raise GdkError("GDKDecryptHelper.exe is missing.")
+    with tempfile.TemporaryDirectory(prefix="mclib-gdk-") as td:
+        td=Path(td); log=td/"decrypt.log"; done=td/"done"
+        args=f'\"{src}\" \"{dst}\" \"{log}\" \"{done}\"'
+        ps=f"""Invoke-CommandInDesktopPackage -PackageFamilyName '{family}' -App Game -Command '{helper}' -Args '{args}'"""
+        _ps(ps)
+        import time
+        for _ in range(600):
+            if done.exists(): break
+            time.sleep(.1)
+        if not Path(dst).exists():
+            detail=log.read_text(errors="replace") if log.exists() else ""
+            raise GdkError("Could not decrypt Minecraft.Windows.exe. Install Minecraft from Microsoft Store with the licensed Windows account first. "+detail)
+
+def extract_msixvc(version, package_path, channel="release"):
+    package=Path(package_path).resolve()
+    if not package.exists(): raise GdkError(f"Package not found: {package}")
+    family=_family(channel)
+    dest=(VERSIONS/version).resolve()
+    if dest.exists(): shutil.rmtree(dest)
+    dest.parent.mkdir(parents=True,exist_ok=True)
+
+    # Same entitlement-aware strategy used by the GPL reference launcher:
+    # let Windows/Gaming Services stage the encrypted XVC, then copy the
+    # licensed executable from inside package context.
+    uri=package.as_uri()
+    _ps(f"""$pm=New-Object Windows.Management.Deployment.PackageManager; $op=$pm.StagePackageAsync([Uri]'{uri}', $null); while($op.Status -eq 0){{Start-Sleep -Milliseconds 200}}; if($op.Status -ne 1){{throw $op.ErrorCode}}""")
+    staged=_staged_location(family)
+    exe_src=staged/"Minecraft.Windows.exe"
+    if not exe_src.exists(): raise GdkError(f"Staged Minecraft executable not found: {exe_src}")
+
+    tmp=Path(tempfile.gettempdir())/f"mclib-minecraft-{os.getpid()}.exe"
+    tmp.unlink(missing_ok=True)
+    _run_decrypt_in_package(family,exe_src,tmp)
+
+    # Copy staged payload while skipping the protected executable, then replace
+    # it with the licensed copy produced inside the package context.
+    def ignore(path,names):
+        return {"Minecraft.Windows.exe"} if Path(path)==staged and "Minecraft.Windows.exe" in names else set()
+    shutil.copytree(staged,dest,ignore=ignore)
+    shutil.copy2(tmp,dest/"Minecraft.Windows.exe")
+    tmp.unlink(missing_ok=True)
+    return validate(dest)
+
+def install_gdk_version(version, arch="x64", channel="release"):
+    from .downloader import download_version
+    package,entry=download_version(version,arch,channel)
+    if package.suffix.lower()!=".msixvc":
+        raise GdkError(f"{version} resolved to {package.name}, not an MSIXVC GDK package.")
+    return extract_msixvc(version,package,channel),entry
