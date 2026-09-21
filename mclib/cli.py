@@ -68,6 +68,18 @@ def cmd_download(args):
     print("Downloaded:",path)
     print("Source:",entry["source"])
 
+def cmd_gdk(args):
+    require_windows()
+    from .gdk import import_extracted, local_versions, launch_local
+    if args.gdk_action=="import":
+        d=import_extracted(args.version,args.directory)
+        print("Imported GDK version:",d)
+    elif args.gdk_action=="list":
+        for d in local_versions(): print(d.name)
+    elif args.gdk_action=="launch":
+        p=launch_local(args.version)
+        print(f"Launched Bedrock {args.version} (PID {p.pid})")
+
 def build_parser():
     p=argparse.ArgumentParser(prog="mclib",description="MCLI Bedrock — Minecraft for Windows CLI launcher")
     p.add_argument("--version",action="version",version="mclib 0.1.0")
@@ -84,6 +96,12 @@ def build_parser():
     s.add_argument("--arch",default="x64",choices=["x64","x86","arm64","arm"])
     s.add_argument("--channel",choices=["release","preview"])
     s.set_defaults(func=cmd_download)
+
+    g=sub.add_parser("gdk")
+    gs=g.add_subparsers(dest="gdk_action",required=True)
+    x=gs.add_parser("import"); x.add_argument("version"); x.add_argument("directory"); x.set_defaults(func=cmd_gdk)
+    x=gs.add_parser("list"); x.set_defaults(func=cmd_gdk)
+    x=gs.add_parser("launch"); x.add_argument("version"); x.set_defaults(func=cmd_gdk)
 
     s=sub.add_parser("status"); s.set_defaults(func=cmd_status)
     s=sub.add_parser("packages"); s.set_defaults(func=cmd_packages)
