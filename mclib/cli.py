@@ -41,10 +41,42 @@ def cmd_uninstall(args):
     uninstall(args.package_full_name)
     print("Removed:",args.package_full_name)
 
+def cmd_versions(args):
+    require_windows()
+    from .catalog import versions
+    rows=versions()
+    if args.channel: rows=[x for x in rows if x["channel"]==args.channel]
+    if args.arch: rows=[x for x in rows if x["arch"]==args.arch]
+    rows=rows[:args.limit]
+    print(f'{"VERSION":18} {"CHANNEL":10} {"ARCH":8} {"SOURCE":10} DOWNLOAD')
+    print("-"*70)
+    for x in rows:
+        mode="direct" if x["urls"] else "store"
+        print(f'{x["version"]:18} {x["channel"]:10} {x["arch"]:8} {x["source"]:10} {mode}')
+
+def cmd_download(args):
+    require_windows()
+    from .downloader import download_version
+    path,entry=download_version(args.version,args.arch,args.channel)
+    print("Downloaded:",path)
+    print("Source:",entry["source"])
+
 def build_parser():
     p=argparse.ArgumentParser(prog="mclib",description="MCLI Bedrock — Minecraft for Windows CLI launcher")
     p.add_argument("--version",action="version",version="mclib 0.1.0")
     sub=p.add_subparsers(dest="command",required=True)
+
+    s=sub.add_parser("versions")
+    s.add_argument("--channel",choices=["release","preview"])
+    s.add_argument("--arch",choices=["x64","x86","arm64","arm"])
+    s.add_argument("--limit",type=int,default=50)
+    s.set_defaults(func=cmd_versions)
+
+    s=sub.add_parser("download")
+    s.add_argument("version")
+    s.add_argument("--arch",default="x64",choices=["x64","x86","arm64","arm"])
+    s.add_argument("--channel",choices=["release","preview"])
+    s.set_defaults(func=cmd_download)
 
     s=sub.add_parser("status"); s.set_defaults(func=cmd_status)
     s=sub.add_parser("packages"); s.set_defaults(func=cmd_packages)
