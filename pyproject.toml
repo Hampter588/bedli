@@ -1,0 +1,16 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "mcli-bedrock"
+version = "0.1.0"
+description = "Minecraft Bedrock command-line launcher and package manager for Windows"
+requires-python = ">=3.10"
+dependencies = []
+
+[project.scripts]
+mclib = "mclib.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["mclib*"]
