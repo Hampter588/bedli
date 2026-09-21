@@ -77,11 +77,22 @@ def install(package_path):
     path=Path(package_path).expanduser().resolve()
     if not path.exists():
         raise BedrockError(f"Package not found: {path}")
-    if path.suffix.lower() not in (".msix",".appx",".msixbundle",".appxbundle"):
+    suffix=path.suffix.lower()
+    if suffix==".msixvc":
+        raise BedrockError(
+            "This is a GDK/MSIXVC package. Windows Gaming Services/Xbox deployment is required; "
+            "MCLI Bedrock will not bypass Microsoft Store/Xbox ownership checks."
+        )
+    if suffix not in (".msix",".appx",".msixbundle",".appxbundle"):
         raise BedrockError("Expected .msix, .msixbundle, .appx, or .appxbundle package.")
     escaped=str(path).replace("'","''")
     _powershell(f"Add-AppxPackage -Path '{escaped}'")
     return path
+
+def install_version(version, arch="x64", channel=None):
+    from .downloader import download_version
+    path,entry=download_version(version,arch,channel)
+    return install(path),entry
 
 def uninstall(package_full_name):
     if not package_full_name:
