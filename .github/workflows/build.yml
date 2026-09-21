@@ -1,0 +1,37 @@
+name: Build MCLI Bedrock
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.13"
+          cache: pip
+      - run: python -m pip install . "pyinstaller>=6.16,<7"
+      - run: python scripts/build_binary.py
+      - run: dist\mclib.exe --help
+      - shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force package | Out-Null
+          Copy-Item dist/mclib.exe package/mclib.exe
+          Copy-Item README.md package/README.md
+          Compress-Archive package/* mcli-bedrock-windows-x64.zip -Force
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mcli-bedrock-windows-x64
+          path: mcli-bedrock-windows-x64.zip
+      - if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: mcli-bedrock-windows-x64.zip
