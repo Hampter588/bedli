@@ -1,28 +1,28 @@
-# MCLI Bedrock
+# BEDLI
 
 **Minecraft Bedrock from your terminal.**
 
-MCLI Bedrock is a separate Windows-only project inspired by MCLI's command style. It manages Minecraft for Windows packages and launches installed Bedrock versions from the command line.
+BEDLI is a separate Windows-only project inspired by MCLI's command style. It manages Minecraft for Windows packages and launches installed Bedrock versions from the command line.
 
 > Early project. Bedrock package acquisition/registration varies by Windows version and Microsoft Store policy. Use versions you are legally entitled to access.
 
 ## Commands
 
 ```powershell
-mclib status
-mclib installed
-mclib launch
-mclib launch --version <version>
-mclib install <path-to-msix-or-appx>
-mclib uninstall <package-name>
-mclib packages
+bedli status
+bedli installed
+bedli launch
+bedli launch --version <version>
+bedli install <path-to-msix-or-appx>
+bedli uninstall <package-name>
+bedli packages
 ```
 
 ## Install from source
 
 ```powershell
 python -m pip install -e .
-mclib --help
+bedli --help
 ```
 
 ## Scope
@@ -39,33 +39,33 @@ This project does **not** bypass Microsoft Store ownership/licensing and does no
 
 ## BedrockLauncher-compatible version sources
 
-MCLI Bedrock follows the same public version sources used by BedrockLauncher:
+BEDLI follows the same public version sources used by BedrockLauncher:
 
 - Rayth Network community version database for the historical Bedrock catalog.
 - MinecraftBedrockArchiver/GdkLinks for direct modern GDK package links hosted on Microsoft's Xbox Live CDN.
 - Installed Windows package registration for locally available Minecraft versions.
 
 ```powershell
-mclib versions
-mclib versions --channel release --arch x64
-mclib download 26.1 --arch x64
+bedli versions
+bedli versions --channel release --arch x64
+bedli download 26.1 --arch x64
 ```
 
-Entries marked `direct` can be downloaded directly from Microsoft's package CDN. Entries marked `store` are historical catalog identities that require the Microsoft Store entitlement/update-link flow; MCLI Bedrock does not bypass Store ownership checks.
+Entries marked `direct` can be downloaded directly from Microsoft's package CDN. Entries marked `store` are historical catalog identities that require the Microsoft Store entitlement/update-link flow; BEDLI does not bypass Store ownership checks.
 
-Downloaded packages are cached under `%USERPROFILE%\.mclib\downloads\`.
+Downloaded packages are cached under `%USERPROFILE%\.bedli\downloads\`.
 
 ## GDK support
 
-MCLI Bedrock is GPL-3.0. The native GDK helper is adapted from MCMrARM/mc-w10-version-launcher (GPL-3.0).
+BEDLI is GPL-3.0. The native GDK helper is adapted from MCMrARM/mc-w10-version-launcher (GPL-3.0).
 
-For GDK-era Bedrock, Windows must already have a legitimate Minecraft for Windows license/installation available. MCLI Bedrock does not bypass Microsoft licensing.
+For GDK-era Bedrock, Windows must already have a legitimate Minecraft for Windows license/installation available. BEDLI does not bypass Microsoft licensing.
 
 ```powershell
-mclib download 26.1 --arch x64
-mclib gdk import 26.1 C:\path\to\extracted\minecraft
-mclib gdk list
-mclib gdk launch 26.1
+bedli download 26.1 --arch x64
+bedli gdk import 26.1 C:\path\to\extracted\minecraft
+bedli gdk list
+bedli gdk launch 26.1
 ```
 
 The release ZIP includes `GDKDecryptHelper.exe`, built from the GPL source included under `native/GDKDecryptHelper`.
