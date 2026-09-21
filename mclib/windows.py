@@ -79,10 +79,7 @@ def install(package_path):
         raise BedrockError(f"Package not found: {path}")
     suffix=path.suffix.lower()
     if suffix==".msixvc":
-        raise BedrockError(
-            "This is a GDK/MSIXVC package. Windows Gaming Services/Xbox deployment is required; "
-            "MCLI Bedrock will not bypass Microsoft Store/Xbox ownership checks."
-        )
+        raise BedrockError("For MSIXVC packages use a version install, e.g. mclib install 26.1, so MCLI can stage and extract it safely.")
     if suffix not in (".msix",".appx",".msixbundle",".appxbundle"):
         raise BedrockError("Expected .msix, .msixbundle, .appx, or .appxbundle package.")
     escaped=str(path).replace("'","''")
@@ -91,7 +88,11 @@ def install(package_path):
 
 def install_version(version, arch="x64", channel=None):
     from .downloader import download_version
+    from .gdk import extract_msixvc
     path,entry=download_version(version,arch,channel)
+    if path.suffix.lower()==".msixvc":
+        dest=extract_msixvc(version,path,channel or entry.get("channel") or "release")
+        return dest,entry
     return install(path),entry
 
 def uninstall(package_full_name):
