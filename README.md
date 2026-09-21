@@ -54,3 +54,18 @@ mclib download 26.1 --arch x64
 Entries marked `direct` can be downloaded directly from Microsoft's package CDN. Entries marked `store` are historical catalog identities that require the Microsoft Store entitlement/update-link flow; MCLI Bedrock does not bypass Store ownership checks.
 
 Downloaded packages are cached under `%USERPROFILE%\.mclib\downloads\`.
+
+## GDK support
+
+MCLI Bedrock is GPL-3.0. The native GDK helper is adapted from MCMrARM/mc-w10-version-launcher (GPL-3.0).
+
+For GDK-era Bedrock, Windows must already have a legitimate Minecraft for Windows license/installation available. MCLI Bedrock does not bypass Microsoft licensing.
+
+```powershell
+mclib download 26.1 --arch x64
+mclib gdk import 26.1 C:\path\to\extracted\minecraft
+mclib gdk list
+mclib gdk launch 26.1
+```
+
+The release ZIP includes `GDKDecryptHelper.exe`, built from the GPL source included under `native/GDKDecryptHelper`.
