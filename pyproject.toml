@@ -10,7 +10,7 @@ requires-python = ">=3.10"
 dependencies = ["requests>=2.31"]
 
 [project.scripts]
-mclib = "mclib.cli:main"
+bedli = "mclib.cli:main"
 
 [tool.setuptools.packages.find]
 include = ["mclib*"]
