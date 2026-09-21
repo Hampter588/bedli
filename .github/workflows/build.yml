@@ -25,7 +25,7 @@ jobs:
           $vs = & "${env:ProgramFiles(x86)}\\Microsoft Visual Studio\\Installer\\vswhere.exe" -latest -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath
           if (-not $vs) { throw "Visual Studio C++ Build Tools not found" }
           $devcmd = Join-Path $vs "Common7\\Tools\\VsDevCmd.bat"
-          cmd /c "`"$devcmd`" -arch=x64 -host_arch=x64 && cl /nologo /std:c++20 /O2 /EHsc /DUNICODE /D_UNICODE native\\GDKDecryptHelper\\GDKDecryptHelper.cpp /Fe:native\\GDKDecryptHelper\\GDKDecryptHelper.exe /link /SUBSYSTEM:WINDOWS"
+          cmd /c "`"$devcmd`" -arch=x64 -host_arch=x64 && cl /nologo /std:c++20 /O2 /EHsc /DUNICODE /D_UNICODE native\\GDKDecryptHelper\\GDKDecryptHelper.cpp /Fe:native\\GDKDecryptHelper\\GDKDecryptHelper.exe /link /SUBSYSTEM:WINDOWS user32.lib"
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
       - run: python scripts/build_binary.py
       - run: dist\bedli.exe --help
