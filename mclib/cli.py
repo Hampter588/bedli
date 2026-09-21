@@ -1,5 +1,5 @@
 import argparse, json, platform, sys
-from .windows import BedrockError, packages, launch, install, uninstall
+from .windows import BedrockError, packages, launch, install, uninstall, install_version
 
 def require_windows():
     if platform.system()!="Windows":
@@ -33,8 +33,15 @@ def cmd_launch(args):
 
 def cmd_install(args):
     require_windows()
-    path=install(args.package)
-    print("Installed package:",path)
+    candidate=args.package
+    from pathlib import Path
+    if Path(candidate).expanduser().exists():
+        path=install(candidate)
+        print("Installed package:",path)
+    else:
+        path,entry=install_version(candidate,args.arch,args.channel)
+        print(f"Installed Bedrock {entry['version']} from {entry['source']}")
+        print(path)
 
 def cmd_uninstall(args):
     require_windows()
@@ -87,7 +94,9 @@ def build_parser():
     s.set_defaults(func=cmd_launch)
 
     s=sub.add_parser("install")
-    s.add_argument("package",help="Local .msix/.appx/.msixbundle/.appxbundle path")
+    s.add_argument("package",help="Bedrock version or local .msix/.appx/.msixbundle/.appxbundle path")
+    s.add_argument("--arch",default="x64",choices=["x64","x86","arm64","arm"])
+    s.add_argument("--channel",choices=["release","preview"])
     s.set_defaults(func=cmd_install)
 
     s=sub.add_parser("uninstall")
