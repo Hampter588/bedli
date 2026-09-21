@@ -36,3 +36,21 @@ mclib --help
 - keeps package discovery/launch logic isolated from MCLI Java
 
 This project does **not** bypass Microsoft Store ownership/licensing and does not include Microsoft authentication tokens or private Store APIs.
+
+## BedrockLauncher-compatible version sources
+
+MCLI Bedrock follows the same public version sources used by BedrockLauncher:
+
+- Rayth Network community version database for the historical Bedrock catalog.
+- MinecraftBedrockArchiver/GdkLinks for direct modern GDK package links hosted on Microsoft's Xbox Live CDN.
+- Installed Windows package registration for locally available Minecraft versions.
+
+```powershell
+mclib versions
+mclib versions --channel release --arch x64
+mclib download 26.1 --arch x64
+```
+
+Entries marked `direct` can be downloaded directly from Microsoft's package CDN. Entries marked `store` are historical catalog identities that require the Microsoft Store entitlement/update-link flow; MCLI Bedrock does not bypass Store ownership checks.
+
+Downloaded packages are cached under `%USERPROFILE%\.mclib\downloads\`.
