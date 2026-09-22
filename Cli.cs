@@ -16,15 +16,17 @@ public static class Cli {
  static async Task Versions(string[] a){var arch=Opt(a,"--arch");var all=await Catalog.GetAsync();if(arch!=null)all=all.Where(x=>x.Arch==arch).ToList();Console.WriteLine($"{"VERSION",-16} {"ARCH",-7} {"CHANNEL",-8} PACKAGE");foreach(var v in all.Take(100))Console.WriteLine($"{v.Version,-16} {v.Arch,-7} {v.Channel,-8} {v.PackageVersion}");}
  static string? Opt(string[] a,string n){var i=Array.IndexOf(a,n);return i>=0&&i+1<a.Length?a[i+1]:null;}
  static void Require(string[] a,int n){if(a.Length<n)throw new BedliException("Missing argument. Run bedli --help.");}
- static void Help(){Console.WriteLine("""BEDLI — Minecraft Bedrock command-line launcher
-
-bedli versions [--arch x64]
-bedli download <version> [--arch x64]
-bedli install <version> [--arch x64]
-bedli installed
-bedli launch <version>
-bedli remove <version>
-
-GDK installs require a legitimate Minecraft for Windows Microsoft Store license.
-""");}
+ static void Help()
+ {
+  Console.WriteLine("BEDLI - Minecraft Bedrock command-line launcher");
+  Console.WriteLine();
+  Console.WriteLine("bedli versions [--arch x64]");
+  Console.WriteLine("bedli download <version> [--arch x64]");
+  Console.WriteLine("bedli install <version> [--arch x64]");
+  Console.WriteLine("bedli installed");
+  Console.WriteLine("bedli launch <version>");
+  Console.WriteLine("bedli remove <version>");
+  Console.WriteLine();
+  Console.WriteLine("GDK installs require a legitimate Minecraft for Windows Microsoft Store license.");
+ }
 }
