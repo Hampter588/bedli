@@ -24,8 +24,8 @@ public static class PackageService {
  static async Task DecryptExe(string family,string src,string dst){
   var helper=Path.Combine(AppContext.BaseDirectory,"GDKDecryptHelper.exe");if(!File.Exists(helper))throw new BedliException("GDKDecryptHelper.exe is missing beside bedli.exe.");
   var log=Path.GetTempFileName();var done=dst+".done";var arg=$"\"{src}\" \"{dst}\" \"{log}\" \"{done}\"";
-  var escaped(string x)=>x.Replace("'","''");
-  var command=$"Invoke-CommandInDesktopPackage -PackageFamilyName '{escaped(family)}' -App Game -Command '{escaped(helper)}' -Args '{escaped(arg)}'";
+  string Escaped(string x)=>x.Replace("'","''");
+  var command=$"Invoke-CommandInDesktopPackage -PackageFamilyName '{Escaped(family)}' -App Game -Command '{Escaped(helper)}' -Args '{Escaped(arg)}'";
   var psi=new ProcessStartInfo("powershell.exe"){UseShellExecute=false,CreateNoWindow=true,RedirectStandardError=true,RedirectStandardOutput=true};
   psi.ArgumentList.Add("-NoProfile");psi.ArgumentList.Add("-NonInteractive");psi.ArgumentList.Add("-ExecutionPolicy");psi.ArgumentList.Add("Bypass");psi.ArgumentList.Add("-Command");psi.ArgumentList.Add(command);
   using var p=Process.Start(psi)??throw new BedliException("Could not start PowerShell package-context helper.");await p.WaitForExitAsync();
