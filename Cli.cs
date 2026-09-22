@@ -2,6 +2,7 @@ namespace Bedli;
 public static class Cli {
  public static async Task RunAsync(string[] a){
   if(a.Length==0||a[0] is "-h" or "--help" or "help"){Help();return;} Paths.Ensure();
+  if(a[0]=="__copy-exe"){Require(a,4);File.Copy(a[1],a[2],true);File.WriteAllText(a[3],"done");return;}
   switch(a[0].ToLowerInvariant()){
    case "versions": await Versions(a);break;
    case "download": Require(a,2);{var v=await Catalog.FindAsync(a[1],Opt(a,"--arch")??"x64");var p=await Downloader.DownloadAsync(v);Console.WriteLine(p);}break;
