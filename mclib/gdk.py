@@ -96,7 +96,7 @@ def extract_msixvc(version, package_path, channel="release"):
     # let Windows/Gaming Services stage the encrypted XVC, then copy the
     # licensed executable from inside package context.
     uri=package.as_uri()
-    _ps(f"""$pm=New-Object Windows.Management.Deployment.PackageManager; $op=$pm.StagePackageAsync([Uri]'{uri}', $null); while($op.Status -eq 0){{Start-Sleep -Milliseconds 200}}; if($op.Status -ne 1){{throw $op.ErrorCode}}""")
+    _ps(f"""$pm=[Windows.Management.Deployment.PackageManager,Windows.Management.Deployment,ContentType=WindowsRuntime]::new(); $op=$pm.StagePackageAsync([Uri]'{uri}', $null); while($op.Status -eq 0){{Start-Sleep -Milliseconds 200}}; if($op.Status -ne 1){{throw $op.ErrorCode}}""")
     staged=_staged_location(family)
     exe_src=staged/"Minecraft.Windows.exe"
     if not exe_src.exists(): raise GdkError(f"Staged Minecraft executable not found: {exe_src}")
