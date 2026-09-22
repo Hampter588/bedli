@@ -22,16 +22,16 @@ public static class PackageService {
   Console.WriteLine("Installed "+v.Version+" -> "+dest);return dest;
  }
  static async Task DecryptExe(string family,string src,string dst){
-  var helper=Path.Combine(AppContext.BaseDirectory,"GDKDecryptHelper.exe");if(!File.Exists(helper))throw new BedliException("GDKDecryptHelper.exe is missing beside bedli.exe.");
-  var log=Path.GetTempFileName();var done=dst+".done";var arg=$"\"{src}\" \"{dst}\" \"{log}\" \"{done}\"";
+  var helper=Environment.ProcessPath??throw new BedliException("Could not resolve bedli.exe path.");
+  var done=dst+".done";var arg=$"__copy-exe \"{src}\" \"{dst}\" \"{done}\"";
   string Escaped(string x)=>x.Replace("'","''");
   var command=$"Invoke-CommandInDesktopPackage -PackageFamilyName '{Escaped(family)}' -App Game -Command '{Escaped(helper)}' -Args '{Escaped(arg)}'";
   var psi=new ProcessStartInfo("powershell.exe"){UseShellExecute=false,CreateNoWindow=true,RedirectStandardError=true,RedirectStandardOutput=true};
   psi.ArgumentList.Add("-NoProfile");psi.ArgumentList.Add("-NonInteractive");psi.ArgumentList.Add("-ExecutionPolicy");psi.ArgumentList.Add("Bypass");psi.ArgumentList.Add("-Command");psi.ArgumentList.Add(command);
   using var p=Process.Start(psi)??throw new BedliException("Could not start PowerShell package-context helper.");await p.WaitForExitAsync();
   for(int i=0;i<300&&!File.Exists(done);i++)await Task.Delay(100);
-  if(!File.Exists(dst)){var detail=File.Exists(log)?File.ReadAllText(log):await p.StandardError.ReadToEndAsync();throw new BedliException("Licensed executable extraction failed. "+detail);}
-  File.Delete(done);File.Delete(log);
+  if(!File.Exists(dst)){var detail=await p.StandardError.ReadToEndAsync();throw new BedliException("Licensed executable extraction failed. "+detail);}
+  File.Delete(done);
  }
  static void CopyTree(string src,string dst,string skip){
   Directory.CreateDirectory(dst);foreach(var f in Directory.EnumerateFiles(src)){if(Path.GetFullPath(f).Equals(Path.GetFullPath(skip),StringComparison.OrdinalIgnoreCase))continue;try{File.Copy(f,Path.Combine(dst,Path.GetFileName(f)),true);}catch(UnauthorizedAccessException){}}
