@@ -1,0 +1,8 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup><OutputType>Exe</OutputType><TargetFramework>net8.0</TargetFramework></PropertyGroup>
+  <ItemGroup>
+    <Compile Include="../../modules/BedrockLauncher.UpdateProcessor/Handlers/ParallelDownloader.cs" Link="ParallelDownloader.cs" />
+    <Compile Include="../../BedrockLauncher/ConsoleProgress.cs" Link="ConsoleProgress.cs" />
+    <Compile Include="../../BedrockLauncher/Enums/LauncherState.cs" Link="LauncherState.cs" />
+  </ItemGroup>
+</Project>
