@@ -1,1 +1,0 @@
-namespace Bedli; public sealed class BedliException(string message) : Exception(message) { }
