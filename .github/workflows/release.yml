@@ -1,0 +1,109 @@
+name: Build and release bedli
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'New release tag (for example, v1.0.3)'
+        required: true
+        type: string
+      prerelease:
+        description: Mark this release as a prerelease
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: bedli-release-${{ inputs.tag }}
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: windows-latest
+    timeout-minutes: 45
+    permissions:
+      contents: write
+    defaults:
+      run:
+        shell: pwsh
+    env:
+      RELEASE_TAG: ${{ inputs.tag }}
+      DOTNET_NOLOGO: true
+      DOTNET_CLI_TELEMETRY_OPTOUT: true
+
+    steps:
+      - name: Checkout source and pinned submodules
+        uses: actions/checkout@v7
+        with:
+          submodules: recursive
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Validate new release tag
+        run: |
+          if ($env:RELEASE_TAG -notmatch '^[A-Za-z0-9][A-Za-z0-9._-]{0,79}$') {
+            throw 'Use a tag of up to 80 letters, numbers, dots, underscores, or hyphens, beginning with a letter or number.'
+          }
+          git check-ref-format "refs/tags/$env:RELEASE_TAG"
+          if ($LASTEXITCODE -ne 0) { throw 'Invalid Git tag.' }
+          git show-ref --verify --quiet "refs/tags/$env:RELEASE_TAG"
+          if ($LASTEXITCODE -eq 0) { throw 'That tag already exists. Choose a new release tag.' }
+          if ($LASTEXITCODE -ne 1) { throw 'Could not check existing tags.' }
+          $global:LASTEXITCODE = 0
+
+      - name: Install .NET 8 SDK
+        id: dotnet
+        uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Select SDK and CI build targets
+        env:
+          SDK_VERSION: ${{ steps.dotnet.outputs.dotnet-version }}
+        run: |
+          @{ sdk = @{ version = $env:SDK_VERSION; rollForward = 'latestPatch' } } |
+            ConvertTo-Json | Set-Content global.json
+          Copy-Item BedrockLauncher/Github.Directory.Build.targets BedrockLauncher/Directory.Build.targets
+
+      - name: Test downloader and startup detection
+        run: |
+          dotnet run --project tests/Downloads/Downloads.csproj -c Release
+          if ($LASTEXITCODE -ne 0) { throw 'Download tests failed.' }
+          dotnet run --project tests/LaunchProbe/LaunchProbe.csproj -c Release
+          if ($LASTEXITCODE -ne 0) { throw 'Startup tests failed.' }
+
+      - name: Publish self-contained Windows x64 build
+        run: |
+          dotnet publish BedrockLauncher/BedrockLauncher.csproj -c Release -r win-x64 --self-contained true -o artifacts/bedli
+          if ($LASTEXITCODE -ne 0) { throw 'Publish failed.' }
+
+      - name: Test published CLI
+        run: |
+          & ./tests/cli-smoke.ps1 -Executable "$PWD/artifacts/bedli/bedli.exe"
+          # The smoke tests deliberately exercise nonzero native exit codes.
+          # Assertion failures throw; clear the expected final usage-error code.
+          $global:LASTEXITCODE = 0
+
+      - name: Package release and checksum
+        run: |
+          Copy-Item LICENSE, README.md artifacts/bedli/
+          $archive = "artifacts/bedli-$env:RELEASE_TAG-win-x64.zip"
+          Compress-Archive -Path artifacts/bedli/* -DestinationPath $archive -CompressionLevel Optimal
+          $hash = (Get-FileHash -LiteralPath $archive -Algorithm SHA256).Hash.ToLowerInvariant()
+          "$hash  $([IO.Path]::GetFileName($archive))" | Set-Content -Encoding ascii "$archive.sha256"
+
+      - name: Publish GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RELEASE_COMMIT: ${{ github.sha }}
+          PRERELEASE: ${{ inputs.prerelease }}
+        run: |
+          $archive = "artifacts/bedli-$env:RELEASE_TAG-win-x64.zip"
+          $releaseArgs = @('release', 'create', $env:RELEASE_TAG, $archive, "$archive.sha256",
+            '--target', $env:RELEASE_COMMIT, '--title', "bedli $env:RELEASE_TAG", '--generate-notes')
+          if ($env:PRERELEASE -eq 'true') { $releaseArgs += '--prerelease' }
+          gh @releaseArgs
+          if ($LASTEXITCODE -ne 0) { throw 'GitHub Release publishing failed.' }

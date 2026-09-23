@@ -64,6 +64,15 @@ Older UWP versions may require Developer Mode for local package registration.
 When their manifest requires Microsoft.Services.Store.Engagement, the CLI installs
 the existing x64 framework dependency automatically if a compatible version is missing.
 
+## Publishing a release
+
+In GitHub, open **Actions → Build and release bedli → Run workflow**. Select the
+branch to build, enter a new tag such as `v1.0.3`, and optionally mark it as a
+prerelease. The workflow runs tests, publishes a self-contained Windows x64 build,
+and uploads `bedli-<tag>-win-x64.zip` and its SHA-256 checksum to GitHub Releases.
+Extract the whole ZIP before running `bedli.exe`. It uses the built-in GitHub token;
+no extra repository secret is required. Pushes and pull requests do not trigger it.
+
 ## Upstream project
 
 ---
